@@ -10,6 +10,7 @@ Source code split into three files:
 * `lexer.py`  generates tokens ready for parsing
 * `parse_tree.py` generates parse_tree 
 * `interpreter.py` interprets the tree
+
 Main focus of the project is `parse_tree.py` because this project is essentially an implementation of **TDOP** Algorithm. 
 Making an interpreter requires much more work. The code in the interpreter file is shitty and I currently have o plans on improving it.
 I am making a new language with Rust Language. How ever not yet published it. 
