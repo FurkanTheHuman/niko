@@ -13,10 +13,23 @@ class Lexer(Thread):
         self.name = name
         self._line = 1
         self.keywords = ("if", "else", "while", "for", "fn", "print", "let")
-        self._opertors = ["+", "-","*","/","=",":","==","<",">", "|", "&", ",", "::"]  
+        self._opertors = [
+            "+",
+            "-",
+            "*",
+            "/",
+            "=",
+            ":",
+            "==",
+            "<",
+            ">",
+            "|",
+            "&",
+            ",",
+            "::",
+        ]
         self.operators = self._opertors
         self.indentlevels = [0]
-
 
     def run(self):
         state = self._lex_initial
@@ -32,7 +45,7 @@ class Lexer(Thread):
                 break
 
     def _add(self, token_type, value=None):
-        self._que.put((token_type, self._line, self._source[self._start:self._pos]))
+        self._que.put((token_type, self._line, self._source[self._start : self._pos]))
         self._start = self._pos
 
     def _lex_initial(self):
@@ -109,7 +122,7 @@ class Lexer(Thread):
                 escape = False
                 continue
 
-            if current == '\\':
+            if current == "\\":
                 escape = True
 
             elif current == '"':
@@ -134,11 +147,19 @@ class Lexer(Thread):
                 self._pos += 1
                 return self._lex_float()
             else:
-                if current != " " and current not in self._opertors and  current != "(" and current != ")" and current != "\n" :
-                    raise LexException(f"Integer error at line {self._line } (( {current} ))")
+                if (
+                    current != " "
+                    and current not in self._opertors
+                    and current != "("
+                    and current != ")"
+                    and current != "\n"
+                ):
+                    raise LexException(
+                        f"Integer error at line {self._line } (( {current} ))"
+                    )
                 else:
                     self._add("NUMBER")
-                    #self._pos += 1
+                    # self._pos += 1
                     return self._lex_initial
 
     def _lex_float(self):
@@ -151,7 +172,13 @@ class Lexer(Thread):
             if current in digits:
                 self._pos += 1
             else:
-                if current != " " and current not in self._opertors and  current != "(" and current != ")" and current != "\n" :
+                if (
+                    current != " "
+                    and current not in self._opertors
+                    and current != "("
+                    and current != ")"
+                    and current != "\n"
+                ):
                     raise LexException(f"Float error at line {self._line }")
                 else:
                     self._add("FLOAT")
@@ -160,13 +187,14 @@ class Lexer(Thread):
 
     def _lex_name(self):
         def add_keyword_or_name():
-            token = self._source[self._start:self._pos]
+            token = self._source[self._start : self._pos]
             if token in self.keywords:
                 return self._add("KEYWORD")
             elif token in ["True", "False"]:
                 return self._add("BOOL")
             else:
                 return self._add("NAME")
+
         while True:
             try:
                 current = self._current_char()
@@ -178,17 +206,17 @@ class Lexer(Thread):
             else:
                 add_keyword_or_name()
                 return self._lex_initial
-    
+
     def _lex_indent(self):
         current_indent = 0
         while True:
             current = self._current_char()
             if current == " ":
                 self._pos += 1
-                current_indent+=1
+                current_indent += 1
             elif current == "\t":
                 self._pos += 1
-                current_indent+=4
+                current_indent += 4
             elif current == "\n":
                 self._pos += 1
                 current_indent = 0
@@ -202,7 +230,9 @@ class Lexer(Thread):
                             else:
                                 return self._lex_initial
                     else:
-                        raise LexException("Congratz! Your indentation is all messed up!")
+                        raise LexException(
+                            "Congratz! Your indentation is all messed up!"
+                        )
                 elif current_indent > self.indentlevels[-1]:
                     self._add("INDENT")
                     self.indentlevels.append(current_indent)
@@ -211,6 +241,7 @@ class Lexer(Thread):
                     # yeni tokeni indentten sonra başlat
                     self._start = self._pos
                     return self._lex_initial
+
     def _cleanup(self):
         current_indentation = self.indentlevels.pop()
         while current_indentation != 0:
@@ -218,7 +249,6 @@ class Lexer(Thread):
             current_indentation = self.indentlevels.pop()
         self._add("END")
 
-        
 
 class Consumed(Exception):
     pass
@@ -227,15 +257,18 @@ class Consumed(Exception):
 class LexException(Exception):
     pass
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import sys
+
     def source_read():
         if len(sys.argv) > 1:
             with open(sys.argv[1]) as ff:
                 data = ff.read()
                 return data
         else:
-            sys.exit() 
+            sys.exit()
+
     q = Queue()
     ll = Lexer(source_read(), q)
     ll.start()

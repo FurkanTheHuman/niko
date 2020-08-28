@@ -1,17 +1,20 @@
 import re
-import sys 
+import sys
 from lexer import Lexer
 from queue import Queue
 
+
 class ParseError(Exception):
     pass
-    
+
+
 class ErrTest(object):
     """ TODO: This class will be ow this programming language will throw errors """
+
     def __init__(self, err, program, sym_obj):
         print(err)
         try:
-            for i in range(0, sym_obj.parent.line+1):
+            for i in range(0, sym_obj.parent.line + 1):
                 if i == sym_obj.parent.line:
                     print(program[i] + "^^^^^")
                 else:
@@ -22,40 +25,43 @@ class ErrTest(object):
         sys.exit()
 
 
-class BaseSymbol():
-    
-    id = value = parent = None        
-    first = second = third = None # Tree leafs
+class BaseSymbol:
+
+    id = value = parent = None
+    first = second = third = None  # Tree leafs
     stmt_begin = False
+
     def nud(self):
-        enum_source = "" 
+        enum_source = ""
         for i, code in enumerate(self.parent.program.split("\n")):
-            enum_source += str(i+1) +": " +code + "\n"
-        raise ParseError(f"Parse error \nSource Code: \n\n{enum_source} \n TokenID: {self.id} \n line: {self.parent.line}")
+            enum_source += str(i + 1) + ": " + code + "\n"
+        raise ParseError(
+            f"Parse error \nSource Code: \n\n{enum_source} \n TokenID: {self.id} \n line: {self.parent.line}"
+        )
 
     def led(self, left):
         raise ParseError("Unknown operator (%r)" % self.id)
 
     def __repr__(self):
-        if self.id in ["NAME","NUMBER","FLOAT","STRING", "BOOL"]:
+        if self.id in ["NAME", "NUMBER", "FLOAT", "STRING", "BOOL"]:
             return "(%s %s)" % (self.id, self.value)
         out = [self.id, self.first, self.second, self.third]
-        return "\n      (" + " ".join(map(str,filter(None,out))) + ")" 
+        return "\n      (" + " ".join(map(str, filter(None, out))) + ")"
 
-class DenotationFunctions():
+
+class DenotationFunctions:
     def print_nud(self):
         left = self.parent.expression(1)
         print(left)
         return left
-    
+
     def lparen_nud(self):
         expr = self.parent.expression()
         self.parent.match(self.parent.sym["RIGHT_PAREN"])
-        return expr       
+        return expr
 
 
-
-class Parser():
+class Parser:
     def __init__(self, program):
         self.sym = {}
         self.df = DenotationFunctions
@@ -72,9 +78,11 @@ class Parser():
         try:
             s = self.sym[id]
         except KeyError as e:
+
             class s(BaseSymbol):
                 pass
-            s.__name__ = "sym(" + id +")"
+
+            s.__name__ = "sym(" + id + ")"
             s.id = id
             s.lbp = bp
             s.parent = self
@@ -82,7 +90,7 @@ class Parser():
         else:
             s.lbp = max(bp, s.lbp)
         return s
-    
+
     def expression(self, rbp=0):
         """ Heart of the parsing algorithm -> TDOP """
         t = self.token
@@ -95,12 +103,13 @@ class Parser():
         return left
 
     def func_tree_generate(self, name, args, body):
-        self.func_tree[name] = {'args': args, 'body': body }
+        self.func_tree[name] = {"args": args, "body": body}
+
     def match(self, tok=None):
-        """ When an expression is parsed and at the end of the sequence
-        you except some token, call this function """
+        """When an expression is parsed and at the end of the sequence
+        you except some token, call this function"""
         if tok and tok != self.token.id:
-            raise SyntaxError(f'Expected   {tok} ->  {self.token.id}')
+            raise SyntaxError(f"Expected   {tok} ->  {self.token.id}")
         self.token = next(self.token_gen)
 
     def _advance(self, idlist=None):
@@ -112,8 +121,10 @@ class Parser():
         elif not idlist:
             self.token = next(self.token_gen)
         else:
-            raise ParseError("""Expected one of %s
-    found %r instead. (line: %i)""" % (" ".join(idlist), self.token.id, self.line))
+            raise ParseError(
+                """Expected one of %s found %r instead. (line: %i)"""
+                % (" ".join(idlist), self.token.id, self.line)
+            )
 
     def Block(self):
         self._advance(["INDENT"])
@@ -124,7 +135,7 @@ class Parser():
     def Statements(self):
         statements = []
         while True:
-            if self.token.id in ["END","DEDENT"]:
+            if self.token.id in ["END", "DEDENT"]:
                 break
             s = self.Statement()
             if s:
@@ -132,41 +143,49 @@ class Parser():
         return statements
 
     def Statement(self):
-       t = self.token
-       if t.stmt_begin:
-           self._advance()
-           return t.std() 
-       ex = self.expression(0)
-       self._advance(["NEWLINE","END","DEDENT"])
-       return ex
+        t = self.token
+        if t.stmt_begin:
+            self._advance()
+            return t.std()
+        ex = self.expression(0)
+        self._advance(["NEWLINE", "END", "DEDENT"])
+        return ex
 
     def _generate_symbols(self):
-        """ Used for generation of symbols that required. 
+        """Used for generation of symbols that required.
         Like operators, contants, anything"""
+
         def infix(id, bp):
             def led(self, left):
                 self.first = left
                 self.second = self.parent.expression(bp)
                 return self
-            self.symbol_factory(id, bp).led = led 
+
+            self.symbol_factory(id, bp).led = led
+
         def prefix(id, bp):
             def nud(self):
                 self.first = self.parent.expression(bp)
                 return self
+
             self.symbol_factory(id, bp).nud = nud
+
         def infixr(id, bp):
             def led(self, left):
                 self.first = left
-                self.second = self.parent.expression(bp-1)
+                self.second = self.parent.expression(bp - 1)
                 return self
-            self.symbol_factory(id,bp).led = led
+
+            self.symbol_factory(id, bp).led = led
+
         def paren(id):
             def nud(self):
                 expr = self.parent.expression()
                 self.parent.match("RIGHT_PAREN")
                 return expr
+
             self.symbol_factory(id).nud = nud
-        
+
         paren("LEFT_PAREN")
         self.symbol_factory("RIGHT_PAREN")
         self.symbol_factory("END")
@@ -175,26 +194,28 @@ class Parser():
         self.symbol_factory("INDENT")
         self.symbol_factory("DEDENT")
 
-        #infixr("print",0)
-        infix("+",10); infix("-",10); infix("*",20); infix("/",20)
-        infixr("=",1)
-        infix("==",5)
-        infix(">",5)
-        infix("<",5)
-        infix("&",4)
-        infix("|",3)
-        infix(",",1)
-        infix("::",1)
+        # infixr("print",0)
+        infix("+", 10)
+        infix("-", 10)
+        infix("*", 20)
+        infix("/", 20)
+        infixr("=", 1)
+        infix("==", 5)
+        infix(">", 5)
+        infix("<", 5)
+        infix("&", 4)
+        infix("|", 3)
+        infix(",", 1)
+        infix("::", 1)
 
-        prefix("+",100)
+        prefix("+", 100)
         prefix("-", 100)
 
         def literal(id):
             self.symbol_factory(id).nud = lambda self: self
-        for l in ["NUMBER","FLOAT","NAME","STRING","BOOL"]:
+
+        for l in ["NUMBER", "FLOAT", "NAME", "STRING", "BOOL"]:
             literal(l)
-
-
 
         def statement(id, std):
             self.symbol_factory(id).stmt_begin = True
@@ -211,16 +232,19 @@ class Parser():
                 self.parent._advance(["NEWLINE"])
                 self.third = self.parent.Block()
             return self
+
         def let_statement(self):
             self.first = self.parent.expression()
             self.parent._advance(["NEWLINE"])
             return self
+
         def print_statement(self):
             self.parent._advance(["LEFT_PAREN"])
             self.first = self.parent.expression()
             self.parent._advance(["RIGHT_PAREN"])
             self.parent._advance(["NEWLINE"])
             return self
+
         def while_statement(self):
             self.parent._advance(["LEFT_PAREN"])
             self.first = self.parent.expression()
@@ -228,7 +252,8 @@ class Parser():
             self.parent._advance([":"])
             self.parent._advance(["NEWLINE"])
             self.second = self.parent.Block()
-            return self                    
+            return self
+
         def func_statement(self):
             arg_list = []
 
@@ -238,8 +263,8 @@ class Parser():
             self.parent._advance(["RIGHT_PAREN"])
             self.parent._advance([":"])
             self.parent._advance(["NEWLINE"])
-            self.third= self.parent.Block()
-            return self 
+            self.third = self.parent.Block()
+            return self
 
         statement("if", if_statement)
         statement("let", let_statement)
@@ -247,9 +272,9 @@ class Parser():
         statement("while", while_statement)
         statement("fn", func_statement)
 
-    def tokenize(self,program):
+    def tokenize(self, program):
         tokenq = Queue()
-        lex = Lexer(program,tokenq)
+        lex = Lexer(program, tokenq)
         lex.start()
         while True:
             ttype, line, tvalue = tokenq.get()
@@ -262,12 +287,12 @@ class Parser():
             elif ttype == "STRING":
                 symbol = self.sym["STRING"]
                 s = symbol()
-                s.value = tvalue[1:len(tvalue)-1]
+                s.value = tvalue[1 : len(tvalue) - 1]
                 yield s
-            elif ttype in lex.operators :
+            elif ttype in lex.operators:
                 symbol = self.sym[tvalue]
                 s = symbol()
-                yield s  
+                yield s
             elif ttype == "KEYWORD":
                 symbol = self.sym[tvalue]
                 s = symbol()
@@ -276,7 +301,7 @@ class Parser():
                 symbol = self.sym["BOOL"]
                 s = symbol()
                 s.value = True if tvalue == "True" else False
-                yield s 
+                yield s
             elif ttype == "NAME":
                 symbol = self.sym[ttype]
                 s = symbol()
@@ -287,24 +312,27 @@ class Parser():
                 symbol = self.sym["END"]
                 s = symbol()
                 yield s
-            elif ttype in ["LEFT_PAREN", "RIGHT_PAREN", "NEWLINE","INDENT", "DEDENT"]:
+            elif ttype in ["LEFT_PAREN", "RIGHT_PAREN", "NEWLINE", "INDENT", "DEDENT"]:
                 symbol = self.sym[ttype]
                 s = symbol()
                 yield s
             else:
                 raise SyntaxError("unknown operator {}, {}".format(ttype, tvalue))
-                # Find a way to control known tokens 
+                # Find a way to control known tokens
+
     def parse(self):
-        return self.Statements()    
+        return self.Statements()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+
     def source_read():
         if len(sys.argv) > 1:
             with open(sys.argv[1]) as ff:
                 data = ff.read()
                 return data
         else:
-            sys.exit() 
+            sys.exit()
+
     parser = Parser(source_read())
     print(parser.parse())
