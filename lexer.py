@@ -2,14 +2,19 @@ from threading import Thread
 from string import ascii_letters, digits
 from queue import Queue
 
-
+# Lexer 
 class Lexer(Thread):
+    """
+    Handles all lexing. 
+    Threaded because parsing can start before lexing finishes
+    every token consumed by _lex_{token_name} function
+    """
     def __init__(self, source, que, name="No Name"):
         super().__init__()
-        self._source = source
+        self._source = source # source code here
         self._que = que
-        self._start = 0
-        self._pos = 0
+        self._start = 0 # holds the begining of next token
+        self._pos = 0 # current cursor position  
         self.name = name
         self._line = 1
         self.keywords = ("if", "else", "while", "for", "fn", "print", "let")
@@ -32,16 +37,20 @@ class Lexer(Thread):
         self.indentlevels = [0]
 
     def run(self):
+        """
+        heart of the lexer
+        works as a state machine
+        """
         state = self._lex_initial
         while True:
             try:
-                state = state()
+                state = state() # Function changes itself to handle next state starting from _lex_initial
             except Consumed:
                 self._cleanup()
                 break
             except LexException as e:
                 print(e)
-                self._add("END")
+                self._add("END") # EOF
                 break
 
     def _add(self, token_type, value=None):
@@ -49,7 +58,13 @@ class Lexer(Thread):
         self._start = self._pos
 
     def _lex_initial(self):
-        while True:
+        """
+        This function read char by char to determine which function can
+        correctly identify next token. 
+        Returns the function that can handle it. 
+        (except simple operators. they can be consumed directly)  
+        """
+        while True: 
             current = self._current_char()
             if current in ascii_letters:
                 return self._lex_name
@@ -116,7 +131,7 @@ class Lexer(Thread):
             try:
                 current = self._current_char()
             except Consumed:
-                raise LexException("Bizim bi string vardi, o nooldu?")
+                raise LexException("Unclosed string????")
             self._pos += 1
             if escape:
                 escape = False
@@ -257,7 +272,7 @@ class Consumed(Exception):
 class LexException(Exception):
     pass
 
-
+### FOR TESTING PURPOSES. PRINTS TO TOKENS TO SEE
 if __name__ == "__main__":
     import sys
 

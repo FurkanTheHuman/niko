@@ -8,23 +8,6 @@ class ParseError(Exception):
     pass
 
 
-class ErrTest(object):
-    """ TODO: This class will be ow this programming language will throw errors """
-
-    def __init__(self, err, program, sym_obj):
-        print(err)
-        try:
-            for i in range(0, sym_obj.parent.line + 1):
-                if i == sym_obj.parent.line:
-                    print(program[i] + "^^^^^")
-                else:
-                    print(program[i])
-        except IndexError:
-            pass
-
-        sys.exit()
-
-
 class BaseSymbol:
 
     id = value = parent = None
@@ -43,28 +26,19 @@ class BaseSymbol:
         raise ParseError("Unknown operator (%r)" % self.id)
 
     def __repr__(self):
+        """
+        FOR DEBUG:
+        You can print the AST with this.
+        example: `python3 parse_tree.py test-code/math.py`
+        """
         if self.id in ["NAME", "NUMBER", "FLOAT", "STRING", "BOOL"]:
             return "(%s %s)" % (self.id, self.value)
         out = [self.id, self.first, self.second, self.third]
         return "\n      (" + " ".join(map(str, filter(None, out))) + ")"
 
-
-class DenotationFunctions:
-    def print_nud(self):
-        left = self.parent.expression(1)
-        print(left)
-        return left
-
-    def lparen_nud(self):
-        expr = self.parent.expression()
-        self.parent.match(self.parent.sym["RIGHT_PAREN"])
-        return expr
-
-
 class Parser:
     def __init__(self, program):
         self.sym = {}
-        self.df = DenotationFunctions
         self._generate_symbols()
         self.program = program
         self._var_list = {}
@@ -74,12 +48,16 @@ class Parser:
         self.func_tree = {}
 
     def symbol_factory(self, id, bp=0):
-        """ Add known symbols to symbol table(sym) """
+        """ 
+        Add known symbols to symbol table(sym). 
+        Parser does not recognize symbols if it is not in the table
+        """
         try:
-            s = self.sym[id]
+            s = self.sym[id] # if already in table don't do anything. Memoized
         except KeyError as e:
 
-            class s(BaseSymbol):
+            class s(BaseSymbol): 
+                # create appropriate symbol class at run time
                 pass
 
             s.__name__ = "sym(" + id + ")"
@@ -89,10 +67,18 @@ class Parser:
             self.sym[id] = s
         else:
             s.lbp = max(bp, s.lbp)
-        return s
+        return s # NOTE: This function does not returns an object. It returns the class
 
     def expression(self, rbp=0):
-        """ Heart of the parsing algorithm -> TDOP """
+        """ 
+        Heart of the parsing algorithm -> TDOP 
+        
+        Explaining this function here is not feasible.
+        Check README.md for links to the tutorials
+
+        At the most basic level this function handles the precedence
+        of tokens and parses them from highest to lowest   
+        """
         t = self.token
         self.token = next(self.token_gen)
         left = t.nud()
@@ -105,15 +91,10 @@ class Parser:
     def func_tree_generate(self, name, args, body):
         self.func_tree[name] = {"args": args, "body": body}
 
-    def match(self, tok=None):
-        """When an expression is parsed and at the end of the sequence
-        you except some token, call this function"""
-        if tok and tok != self.token.id:
-            raise SyntaxError(f"Expected   {tok} ->  {self.token.id}")
-        self.token = next(self.token_gen)
-
     def _advance(self, idlist=None):
-        # Same as match should be replaced
+        """
+        Get the next token 
+        """
         if self.token.id == "END":
             return
         if idlist and self.token.id in idlist:
@@ -126,7 +107,12 @@ class Parser:
                 % (" ".join(idlist), self.token.id, self.line)
             )
 
-    def Block(self):
+    def Block(self): 
+        """
+        for parsing inside of a statement.
+        every statement begins with indentation.
+        like python
+        """
         self._advance(["INDENT"])
         stmts = self.Statements()
         self._advance(["DEDENT"])
@@ -152,8 +138,11 @@ class Parser:
         return ex
 
     def _generate_symbols(self):
-        """Used for generation of symbols that required.
-        Like operators, contants, anything"""
+        """
+        Used for generation of required symbols.
+        Like operators, contants, anything.
+        adds them to symbol table
+        """
 
         def infix(id, bp):
             def led(self, left):
@@ -181,7 +170,7 @@ class Parser:
         def paren(id):
             def nud(self):
                 expr = self.parent.expression()
-                self.parent.match("RIGHT_PAREN")
+                self.parent._advance("RIGHT_PAREN")
                 return expr
 
             self.symbol_factory(id).nud = nud
@@ -194,12 +183,11 @@ class Parser:
         self.symbol_factory("INDENT")
         self.symbol_factory("DEDENT")
 
-        # infixr("print",0)
+        # numbers denote order of operations
         infix("+", 10)
         infix("-", 10)
         infix("*", 20)
         infix("/", 20)
-        infixr("=", 1)
         infix("==", 5)
         infix(">", 5)
         infix("<", 5)
@@ -207,7 +195,10 @@ class Parser:
         infix("|", 3)
         infix(",", 1)
         infix("::", 1)
+        
+        infixr("=", 1) # assignment is a little different from others.
 
+        # example +4 , -2  
         prefix("+", 100)
         prefix("-", 100)
 
@@ -307,7 +298,6 @@ class Parser:
                 s = symbol()
                 s.value = tvalue
                 yield s
-
             elif ttype == "END":
                 symbol = self.sym["END"]
                 s = symbol()
@@ -318,12 +308,11 @@ class Parser:
                 yield s
             else:
                 raise SyntaxError("unknown operator {}, {}".format(ttype, tvalue))
-                # Find a way to control known tokens
 
     def parse(self):
         return self.Statements()
 
-
+# FOR TESTING PURPOSES. PRINTS SYNTAX TREE
 if __name__ == "__main__":
 
     def source_read():

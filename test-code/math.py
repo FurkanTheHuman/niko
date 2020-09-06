@@ -8,7 +8,7 @@ fn pow(x, y):
 
 
 
-print("Sayıların kareleri: ")
+print("Squares of numbers: ")
 let counter = 10
 while(counter>0):
 	pow::(counter, 2)
@@ -17,7 +17,7 @@ while(counter>0):
 
 print("")
 
-print("Faktoriyeller: ")
+print("Factorials: ")
 fn factorial(x):
 	let fact = 1
 	while(x>0):
@@ -35,7 +35,7 @@ while(counter>0):
 
 print("")
 
-print("100'den küçük fibonacci sayıları: ")
+print("Fibonacci numbers: ")
 fn fib(number):
 	let a = 1
 	let b = 1
