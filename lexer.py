@@ -54,12 +54,13 @@ class Lexer(Thread):
                 break
 
     def _add(self, token_type, value=None):
+        """ After _lex functions determine what is a token, they call this to consume  """
         self._que.put((token_type, self._line, self._source[self._start : self._pos]))
         self._start = self._pos
 
     def _lex_initial(self):
         """
-        This function read char by char to determine which function can
+        This function reads char by char to determine which function can
         correctly identify next token. 
         Returns the function that can handle it. 
         (except simple operators. they can be consumed directly)  

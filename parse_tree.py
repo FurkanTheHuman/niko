@@ -45,7 +45,7 @@ class Parser:
         self.token_gen = self.tokenize(self.program)
         self.token = next(self.token_gen)
         self.line = 1
-        self.func_tree = {}
+        self.func_tree = {} # holds defined functions
 
     def symbol_factory(self, id, bp=0):
         """ 
@@ -119,6 +119,7 @@ class Parser:
         return stmts
 
     def Statements(self):
+        """ Parse all statements """
         statements = []
         while True:
             if self.token.id in ["END", "DEDENT"]:
@@ -129,6 +130,7 @@ class Parser:
         return statements
 
     def Statement(self):
+        """ Parse a single statement """
         t = self.token
         if t.stmt_begin:
             self._advance()

@@ -13,7 +13,7 @@ class Interpreter:
     def eval(self, statement):
         """
         Whole evaluation procedure happens here.
-        This might seem horrible (and maybe it is) but this is just if statements.
+        Code might seem horrible (and maybe it is) but this is just if statements.
         brokes every statement to expressions and evalutes them one by one.
         Notice the recursive behaviour 
         """
@@ -51,7 +51,8 @@ class Interpreter:
         
         # FUNCTION EXECUTION
         # this one is a little tricky
-        # not the best way to do it but because of the parser using an operator was easier to interpret
+        # functions are called like f_name::(args)
+        # not the best way to do it but because of the parser, using an operator( :: ) was easier to interpret
         elif statement.id == "::":
             vals = statement.second
             params = self.func_list[statement.first.value]["args"]
