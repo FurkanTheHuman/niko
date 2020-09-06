@@ -27,6 +27,6 @@ This language implementation can be used for educational purposes. The code can 
 
 [Douglas Crockford's implementation](http://www.crockford.com/). Uses javascript however the algorithm is the same.
 
-[Turkish resource, Yaşar Arabacı](https://ysar.net/python/lexical-analiz.html) Best lexer implementation. Also There is parser too
+[Turkish resource, Yaşar Arabacı](https://ysar.net/python/lexical-analiz.html) 
 
 
